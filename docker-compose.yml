@@ -1,0 +1,16 @@
+services:
+  web:
+    build: .
+    container_name: ycg-next
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.local
+    volumes:
+      - ./next/var/data:/app/next/var/data
+    working_dir: /app/next
+    tty: true
+
+volumes:
+  data:
+    driver: local

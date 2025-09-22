@@ -1,0 +1,35 @@
+{
+  "name": "ycg-next",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "dotenv -e .env.local -- next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@types/winston": "^2.4.4",
+    "formidable": "3.5.1",
+    "googleapis": "131.0.0",
+    "mime-types": "2.1.35",
+    "next": "14.2.5",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "sharp": "0.33.4",
+    "uuid": "9.0.1",
+    "winston": "^3.17.0",
+    "zod": "3.23.8"
+  },
+  "devDependencies": {
+    "@types/formidable": "^3.4.5",
+    "@types/mime-types": "^3.0.1",
+    "@types/node": "20.11.30",
+    "@types/react": "18.2.66",
+    "@types/react-dom": "18.2.22",
+    "dotenv-cli": "^10.0.0",
+    "eslint": "8.57.0",
+    "eslint-config-next": "14.2.5",
+    "typescript": "5.4.5"
+  }
+}
