@@ -65,6 +65,16 @@ input:focus {
     }
 }
 
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+
+    100% {
+        transform: translateX(100%);
+    }
+}
+
 .fade-in {
     animation: fadeIn 0.3s ease-out;
 }

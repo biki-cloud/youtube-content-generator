@@ -230,11 +230,8 @@ export default function VideoCreator({
       setVideoUrl(videoUrl);
       onVideoCreate?.(job.result.key);
 
-      // 動画作成完了後に動画一覧を更新
-      if (projectId) {
-        console.log("VideoCreator: Updating video list after completion");
-        fetchVideoList();
-      }
+      // 動画作成完了後の処理（リロードを防ぐため、動画一覧の自動更新は行わない）
+      console.log("VideoCreator: Video creation completed successfully");
     } else if (job.status === "failed") {
       console.error("VideoCreator: Video creation failed", {
         error: job.error,
@@ -292,28 +289,52 @@ export default function VideoCreator({
             ✅ 完了
           </span>
         )}
-        <button
-          onClick={() => setShowVideoList(!showVideoList)}
-          style={{
-            marginLeft: "auto",
-            padding: "8px 16px",
-            backgroundColor: "#6c757d",
-            color: "white",
-            border: "none",
-            borderRadius: "6px",
-            cursor: "pointer",
-            fontSize: "12px",
-            transition: "background-color 0.2s",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = "#5a6268";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = "#6c757d";
-          }}
-        >
-          {showVideoList ? "動画を隠す" : `作成済み動画 (${videoFiles.length})`}
-        </button>
+        <div style={{ display: "flex", gap: 8, marginLeft: "auto" }}>
+          <button
+            onClick={fetchVideoList}
+            style={{
+              padding: "8px 16px",
+              backgroundColor: "#28a745",
+              color: "white",
+              border: "none",
+              borderRadius: "6px",
+              cursor: "pointer",
+              fontSize: "12px",
+              transition: "background-color 0.2s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "#218838";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "#28a745";
+            }}
+          >
+            🔄 更新
+          </button>
+          <button
+            onClick={() => setShowVideoList(!showVideoList)}
+            style={{
+              padding: "8px 16px",
+              backgroundColor: "#6c757d",
+              color: "white",
+              border: "none",
+              borderRadius: "6px",
+              cursor: "pointer",
+              fontSize: "12px",
+              transition: "background-color 0.2s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "#5a6268";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "#6c757d";
+            }}
+          >
+            {showVideoList
+              ? "動画を隠す"
+              : `作成済み動画 (${videoFiles.length})`}
+          </button>
+        </div>
       </div>
       <div style={{ display: "grid", gap: 16 }}>
         <div
@@ -552,22 +573,60 @@ export default function VideoCreator({
                   <div
                     style={{
                       width: "100%",
-                      height: "8px",
-                      backgroundColor: "#e9ecef",
-                      borderRadius: "4px",
+                      height: "12px",
+                      backgroundColor: "#f1f3f4",
+                      borderRadius: "8px",
                       overflow: "hidden",
-                      marginBottom: 8,
+                      marginBottom: 12,
+                      position: "relative",
+                      boxShadow: "inset 0 2px 4px rgba(0,0,0,0.1)",
                     }}
                   >
                     <div
                       style={{
                         width: `${job.progress}%`,
                         height: "100%",
-                        backgroundColor: "#007bff",
-                        transition: "width 0.3s ease",
-                        borderRadius: "4px",
+                        background:
+                          "linear-gradient(90deg, #667eea 0%, #764ba2 50%, #f093fb 100%)",
+                        transition: "width 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
+                        borderRadius: "8px",
+                        position: "relative",
+                        overflow: "hidden",
                       }}
-                    />
+                    >
+                      {/* アニメーション効果 */}
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          background:
+                            "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)",
+                          animation: "shimmer 2s infinite",
+                        }}
+                      />
+                    </div>
+                    {/* パーセンテージ表示 */}
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "50%",
+                        left: "50%",
+                        transform: "translate(-50%, -50%)",
+                        fontSize: "10px",
+                        fontWeight: "bold",
+                        color: job.progress > 50 ? "#fff" : "#333",
+                        textShadow:
+                          job.progress > 50
+                            ? "0 1px 2px rgba(0,0,0,0.3)"
+                            : "none",
+                        zIndex: 1,
+                      }}
+                    >
+                      {job.progress}%
+                    </div>
                   </div>
                 )}
 
@@ -606,24 +665,49 @@ export default function VideoCreator({
         {videoUrl && (
           <div
             style={{
-              padding: "20px",
-              backgroundColor: "#d4edda",
-              borderRadius: "8px",
-              border: "1px solid #c3e6cb",
+              padding: "24px",
+              background: "linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%)",
+              borderRadius: "12px",
+              border: "2px solid #28a745",
+              boxShadow: "0 4px 12px rgba(40, 167, 69, 0.2)",
+              animation: "fadeIn 0.5s ease-out",
             }}
           >
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 8,
-                marginBottom: 16,
+                gap: 12,
+                marginBottom: 20,
               }}
             >
-              <span style={{ fontSize: "20px" }}>🎉</span>
-              <h4 style={{ margin: 0, fontSize: "16px", color: "#155724" }}>
+              <span style={{ fontSize: "24px" }}>🎉</span>
+              <h4
+                style={{
+                  margin: 0,
+                  fontSize: "18px",
+                  color: "#155724",
+                  fontWeight: "bold",
+                }}
+              >
                 動画が完成しました！
               </h4>
+              <div
+                style={{
+                  marginLeft: "auto",
+                  padding: "6px 12px",
+                  backgroundColor: "#28a745",
+                  color: "white",
+                  borderRadius: "20px",
+                  fontSize: "12px",
+                  fontWeight: "bold",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                }}
+              >
+                ✅ 成功
+              </div>
             </div>
             <video
               src={videoUrl}
@@ -631,8 +715,9 @@ export default function VideoCreator({
               style={{
                 width: "100%",
                 maxWidth: 480,
-                borderRadius: "8px",
-                boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
+                borderRadius: "12px",
+                boxShadow: "0 6px 16px rgba(0,0,0,0.15)",
+                border: "2px solid #fff",
               }}
             />
           </div>
