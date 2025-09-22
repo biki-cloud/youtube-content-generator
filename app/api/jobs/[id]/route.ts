@@ -9,7 +9,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    logInfo("Job status request received", { jobId: params.id });
+    // logInfo("Job status request received", { jobId: params.id });
 
     const job = getJob(params.id);
     if (!job) {
