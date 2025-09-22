@@ -75,6 +75,11 @@ export async function runFFmpegWithProgress(
 
     // 初期情報をログに記録
     logInfo("FFmpeg command", { command: `${ffmpegPath} ${args.join(" ")}` });
+    console.log("=== FFMPEG PROCESS START ===");
+    console.log("Command:", `${ffmpegPath} ${args.join(" ")}`);
+    console.log("Target Duration:", targetDuration);
+    console.log("============================");
+
     if (targetDuration) {
       logInfo("Target duration", { targetDuration });
     }
@@ -88,6 +93,9 @@ export async function runFFmpegWithProgress(
       const str = data.toString();
       stderrOutput += str;
       options?.onStderr?.(str);
+
+      // デバッグ: FFmpegの出力をログに記録
+      logInfo("FFmpeg stderr output", { output: str.trim() });
 
       // 動画の長さを取得（指定された長さを優先）
       if (!duration) {
@@ -162,8 +170,27 @@ export async function runFFmpegWithProgress(
             100
           );
 
+          // デバッグ: 進行状況計算の詳細をログに記録
+          console.log("=== FFMPEG PROGRESS CALCULATION ===");
+          console.log("Time Match:", timeMatch[0]);
+          console.log("Current Time:", currentTime, "seconds");
+          console.log("Duration:", duration, "seconds");
+          console.log("Calculated Progress:", progress, "%");
+          console.log("Last Progress:", lastProgress, "%");
+          console.log("Will Update:", progress > lastProgress);
+          console.log("===================================");
+
+          logInfo("FFmpeg progress calculation", {
+            timeMatch: timeMatch[0],
+            currentTime,
+            duration,
+            calculatedProgress: progress,
+            lastProgress,
+            willUpdate: progress > lastProgress,
+          });
+
           // 進行状況が実際に進んでいる場合のみ更新
-          if (progress > lastProgress && progress > 0) {
+          if (progress > lastProgress) {
             lastProgress = progress;
             progressUpdateCount++;
             options.onProgress(progress);
@@ -198,7 +225,7 @@ export async function runFFmpegWithProgress(
             100
           );
 
-          if (progress > lastProgress && progress > 0) {
+          if (progress > lastProgress) {
             lastProgress = progress;
             progressUpdateCount++;
             options.onProgress(progress);
@@ -263,6 +290,10 @@ export async function runFFmpegWithProgress(
 
     child.on("error", (err) => {
       logError("Failed to start FFmpeg process", err);
+      console.error("=== FFMPEG PROCESS ERROR ===");
+      console.error("Error:", err);
+      console.error("Command:", `${ffmpegPath} ${args.join(" ")}`);
+      console.error("=============================");
       reject(new Error(`Failed to start FFmpeg process: ${err.message}`));
     });
 

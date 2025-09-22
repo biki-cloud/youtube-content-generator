@@ -83,8 +83,21 @@ export function createJob(): JobRecord {
 }
 
 export function getJob(id: string): JobRecord | null {
+  // キャッシュをクリアしてファイルから最新のデータを読み込み
+  jobsCache.clear();
   const jobs = getJobs();
-  return jobs.get(id) || null;
+  const job = jobs.get(id);
+
+  if (job) {
+    console.log("=== GET JOB (FRESH) ===");
+    console.log("Job ID:", id);
+    console.log("Status:", job.status);
+    console.log("Progress:", job.progress);
+    console.log("Updated At:", job.updatedAt);
+    console.log("======================");
+  }
+
+  return job || null;
 }
 
 export function updateJob(
@@ -106,6 +119,16 @@ export function updateJob(
 
   jobs.set(id, next);
   saveJobs(jobs);
+
+  // キャッシュを強制的にリフレッシュ
+  jobsCache.set(id, next);
+
+  console.log("=== JOB UPDATED ===");
+  console.log("Job ID:", id);
+  console.log("Status:", next.status);
+  console.log("Progress:", next.progress);
+  console.log("Previous Progress:", j.progress);
+  console.log("==================");
 
   logInfo("Job updated", {
     jobId: id,
