@@ -153,93 +153,65 @@ export default function VideoCreator({
     }
   }, [imageKey, musicKey, durationSec]);
 
-  // ジョブ状態の監視（SSEのみ）
+  // ジョブ状態の監視（ポーリング）
   useEffect(() => {
     if (!jobId) return;
 
-    console.log("VideoCreator: Starting job monitoring", { jobId });
+    console.log("VideoCreator: Starting job monitoring with polling", {
+      jobId,
+    });
 
-    // SSE接続のみ
-    let eventSource: EventSource | null = null;
-    let sseTimeout: NodeJS.Timeout | null = null;
+    let pollingInterval: NodeJS.Timeout | null = null;
 
-    const startSSE = () => {
-      try {
-        console.log("VideoCreator: Creating SSE connection", { jobId });
-        eventSource = new EventSource(`/api/jobs/${jobId}/stream`);
+    const startPolling = () => {
+      console.log("VideoCreator: Starting polling", { jobId });
 
-        eventSource.onopen = () => {
-          console.log("VideoCreator: SSE connection opened", { jobId });
-          if (sseTimeout) {
-            clearTimeout(sseTimeout);
-            sseTimeout = null;
-          }
-        };
+      const pollJobStatus = async () => {
+        try {
+          const response = await fetch(`/api/jobs/${jobId}`);
 
-        eventSource.onmessage = (event) => {
-          try {
-            console.log("VideoCreator: SSE message received", {
-              jobId,
-              rawData: event.data,
+          if (!response.ok) {
+            console.error("VideoCreator: Failed to fetch job status", {
+              status: response.status,
+              statusText: response.statusText,
             });
-            const jobData: Job = JSON.parse(event.data);
-            console.log("VideoCreator: SSE job update", { jobId, jobData });
 
-            setJob(jobData);
-            jobRef.current = jobData;
-
-            if (jobData.status === "done" || jobData.status === "failed") {
-              console.log("VideoCreator: Job completed, closing SSE", {
-                jobId,
-                status: jobData.status,
-              });
-              eventSource?.close();
+            if (response.status === 404) {
+              setError("ジョブが見つかりません。ページを更新してください。");
+              if (pollingInterval) clearInterval(pollingInterval);
             }
-          } catch (error) {
-            console.error("VideoCreator: Failed to parse SSE data", error, {
-              rawData: event.data,
-            });
+            return;
           }
-        };
 
-        eventSource.onerror = (error) => {
-          console.error("VideoCreator: SSE error", error, {
-            jobId,
-            readyState: eventSource?.readyState,
-          });
-          eventSource?.close();
+          const jobData: Job = await response.json();
+          console.log("VideoCreator: Polling job update", { jobId, jobData });
 
-          // SSEエラー時はエラーメッセージを表示
-          setError(
-            "リアルタイム接続に失敗しました。ページを更新してください。"
-          );
-        };
+          setJob(jobData);
+          jobRef.current = jobData;
 
-        // SSE接続のタイムアウト処理（10秒でタイムアウト）
-        sseTimeout = setTimeout(() => {
-          console.log("VideoCreator: SSE connection timeout", { jobId });
-          eventSource?.close();
-          setError("接続がタイムアウトしました。ページを更新してください。");
-        }, 10000);
-      } catch (error) {
-        console.error("VideoCreator: Failed to create SSE connection", error, {
-          jobId,
-        });
-        setError(
-          "リアルタイム接続の作成に失敗しました。ページを更新してください。"
-        );
-      }
+          if (jobData.status === "done" || jobData.status === "failed") {
+            console.log("VideoCreator: Job completed, stopping polling", {
+              jobId,
+              status: jobData.status,
+            });
+            if (pollingInterval) clearInterval(pollingInterval);
+          }
+        } catch (error) {
+          console.error("VideoCreator: Polling error", error);
+        }
+      };
+
+      // 即座に実行してから定期的に実行
+      pollJobStatus();
+      pollingInterval = setInterval(pollJobStatus, 1000); // 1秒間隔でポーリング
     };
 
-    // SSE接続を開始
-    startSSE();
+    // ポーリングを開始
+    startPolling();
 
     return () => {
-      if (eventSource) {
-        eventSource.close();
-      }
-      if (sseTimeout) {
-        clearTimeout(sseTimeout);
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
       }
     };
   }, [jobId]);

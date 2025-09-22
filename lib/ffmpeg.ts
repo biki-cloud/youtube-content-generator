@@ -67,9 +67,9 @@ export async function runFFmpegWithProgress(
           Math.floor(duration % 60)
         ).padStart(2, "0")}`;
 
-        process.stdout.write(
-          `\r🎬 動画作成中: [${progressBar}] ${progress}% (${timeStr}/${durationStr})`
-        );
+        // process.stdout.write(
+        //   `\r🎬 動画作成中: [${progressBar}] ${progress}% (${timeStr}/${durationStr})`
+        // );
       }
     };
 

@@ -17,21 +17,21 @@ export async function GET(
       return new Response("Job not found", { status: 404 });
     }
 
-    logInfo("Job status returned", {
-      jobId: params.id,
-      status: job.status,
-      progress: job.progress,
-      fullJobData: job,
-    });
+    // logInfo("Job status returned", {
+    //   jobId: params.id,
+    //   status: job.status,
+    //   progress: job.progress,
+    //   fullJobData: job,
+    // });
 
     const response = Response.json(job);
-    logInfo("API response sent", {
-      jobId: params.id,
-      responseStatus: 200,
-      responseBody: job,
-      jobStatus: job.status,
-      jobProgress: job.progress,
-    });
+    // logInfo("API response sent", {
+    //   jobId: params.id,
+    //   responseStatus: 200,
+    //   responseBody: job,
+    //   jobStatus: job.status,
+    //   jobProgress: job.progress,
+    // });
 
     return response;
   } catch (error) {
