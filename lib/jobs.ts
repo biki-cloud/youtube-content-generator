@@ -33,7 +33,7 @@ function loadJobs(): Map<string, JobRecord> {
       jobsArray.forEach((job) => {
         jobsMap.set(job.id, job);
       });
-      logInfo("Jobs loaded from file", { count: jobsMap.size });
+      // logInfo("Jobs loaded from file", { count: jobsMap.size });
       return jobsMap;
     }
   } catch (error) {
@@ -47,7 +47,7 @@ function saveJobs(jobs: Map<string, JobRecord>): void {
     const filePath = getJobsFilePath();
     const jobsArray = Array.from(jobs.values());
     fs.writeFileSync(filePath, JSON.stringify(jobsArray, null, 2));
-    logInfo("Jobs saved to file", { count: jobsArray.length });
+    // logInfo("Jobs saved to file", { count: jobsArray.length });
   } catch (error) {
     logError("Failed to save jobs to file", error);
   }
@@ -89,12 +89,12 @@ export function getJob(id: string): JobRecord | null {
   const job = jobs.get(id);
 
   if (job) {
-    console.log("=== GET JOB (FRESH) ===");
-    console.log("Job ID:", id);
-    console.log("Status:", job.status);
-    console.log("Progress:", job.progress);
-    console.log("Updated At:", job.updatedAt);
-    console.log("======================");
+    // console.log("=== GET JOB (FRESH) ===");
+    // console.log("Job ID:", id);
+    // console.log("Status:", job.status);
+    // console.log("Progress:", job.progress);
+    // console.log("Updated At:", job.updatedAt);
+    // console.log("======================");
   }
 
   return job || null;
@@ -123,20 +123,20 @@ export function updateJob(
   // キャッシュを強制的にリフレッシュ
   jobsCache.set(id, next);
 
-  console.log("=== JOB UPDATED ===");
-  console.log("Job ID:", id);
-  console.log("Status:", next.status);
-  console.log("Progress:", next.progress);
-  console.log("Previous Progress:", j.progress);
-  console.log("==================");
+  // console.log("=== JOB UPDATED ===");
+  // console.log("Job ID:", id);
+  // console.log("Status:", next.status);
+  // console.log("Progress:", next.progress);
+  // console.log("Previous Progress:", j.progress);
+  // console.log("==================");
 
-  logInfo("Job updated", {
-    jobId: id,
-    status: next.status,
-    progress: next.progress,
-    hasResult: !!next.result,
-    hasError: !!next.error,
-  });
+  // logInfo("Job updated", {
+  //   jobId: id,
+  //   status: next.status,
+  //   progress: next.progress,
+  //   hasResult: !!next.result,
+  //   hasError: !!next.error,
+  // });
   return next;
 }
 

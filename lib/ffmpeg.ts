@@ -95,7 +95,7 @@ export async function runFFmpegWithProgress(
       options?.onStderr?.(str);
 
       // デバッグ: FFmpegの出力をログに記録
-      logInfo("FFmpeg stderr output", { output: str.trim() });
+      // logInfo("FFmpeg stderr output", { output: str.trim() });
 
       // 動画の長さを取得（指定された長さを優先）
       if (!duration) {
@@ -171,23 +171,23 @@ export async function runFFmpegWithProgress(
           );
 
           // デバッグ: 進行状況計算の詳細をログに記録
-          console.log("=== FFMPEG PROGRESS CALCULATION ===");
-          console.log("Time Match:", timeMatch[0]);
-          console.log("Current Time:", currentTime, "seconds");
-          console.log("Duration:", duration, "seconds");
-          console.log("Calculated Progress:", progress, "%");
-          console.log("Last Progress:", lastProgress, "%");
-          console.log("Will Update:", progress > lastProgress);
-          console.log("===================================");
+          // console.log("=== FFMPEG PROGRESS CALCULATION ===");
+          // console.log("Time Match:", timeMatch[0]);
+          // console.log("Current Time:", currentTime, "seconds");
+          // console.log("Duration:", duration, "seconds");
+          // console.log("Calculated Progress:", progress, "%");
+          // console.log("Last Progress:", lastProgress, "%");
+          // console.log("Will Update:", progress > lastProgress);
+          // console.log("===================================");
 
-          logInfo("FFmpeg progress calculation", {
-            timeMatch: timeMatch[0],
-            currentTime,
-            duration,
-            calculatedProgress: progress,
-            lastProgress,
-            willUpdate: progress > lastProgress,
-          });
+          // logInfo("FFmpeg progress calculation", {
+          //   timeMatch: timeMatch[0],
+          //   currentTime,
+          //   duration,
+          //   calculatedProgress: progress,
+          //   lastProgress,
+          //   willUpdate: progress > lastProgress,
+          // });
 
           // 進行状況が実際に進んでいる場合のみ更新
           if (progress > lastProgress) {
@@ -198,12 +198,12 @@ export async function runFFmpegWithProgress(
             // ターミナルに進行状況を表示
             showProgressInTerminal(progress, currentTime, duration);
 
-            logInfo("FFmpeg progress update", {
-              progress,
-              currentTime,
-              duration,
-              progressUpdateCount,
-            });
+            // logInfo("FFmpeg progress update", {
+            //   progress,
+            //   currentTime,
+            //   duration,
+            //   progressUpdateCount,
+            // });
           }
         }
       }
@@ -233,13 +233,13 @@ export async function runFFmpegWithProgress(
             // ターミナルに進行状況を表示
             showProgressInTerminal(progress, estimatedTime, duration);
 
-            logInfo("FFmpeg progress update from frames", {
-              progress,
-              frame,
-              estimatedTime,
-              duration,
-              progressUpdateCount,
-            });
+            // logInfo("FFmpeg progress update from frames", {
+            //   progress,
+            //   frame,
+            //   estimatedTime,
+            //   duration,
+            //   progressUpdateCount,
+            // });
           }
         }
       }

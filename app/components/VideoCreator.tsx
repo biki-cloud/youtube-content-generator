@@ -153,130 +153,124 @@ export default function VideoCreator({
     }
   }, [imageKey, musicKey, durationSec]);
 
-  // ジョブ状態のポーリング
+  // ジョブ状態の監視（SSEのみ）
   useEffect(() => {
     if (!jobId) return;
 
-    // 既存のポーリングを停止
-    if (pollingIntervalRef.current) {
-      console.log("VideoCreator: Stopping existing polling", { jobId });
-      clearInterval(pollingIntervalRef.current);
-      pollingIntervalRef.current = null;
-    }
+    console.log("VideoCreator: Starting job monitoring", { jobId });
 
-    console.log("VideoCreator: Starting job polling", { jobId });
+    // SSE接続のみ
+    let eventSource: EventSource | null = null;
+    let sseTimeout: NodeJS.Timeout | null = null;
 
-    const pollJobStatus = async () => {
+    const startSSE = () => {
       try {
-        const response = await fetch(`/api/jobs/${jobId}`);
+        console.log("VideoCreator: Creating SSE connection", { jobId });
+        eventSource = new EventSource(`/api/jobs/${jobId}/stream`);
 
-        if (!response.ok) {
-          console.error("VideoCreator: Failed to fetch job status", {
-            status: response.status,
-            statusText: response.statusText,
-          });
-
-          if (response.status === 404) {
-            setError("ジョブが見つかりません。ページを更新してください。");
-            stopPolling();
+        eventSource.onopen = () => {
+          console.log("VideoCreator: SSE connection opened", { jobId });
+          if (sseTimeout) {
+            clearTimeout(sseTimeout);
+            sseTimeout = null;
           }
-          return;
-        }
+        };
 
-        const jobData: Job = await response.json();
+        eventSource.onmessage = (event) => {
+          try {
+            console.log("VideoCreator: SSE message received", {
+              jobId,
+              rawData: event.data,
+            });
+            const jobData: Job = JSON.parse(event.data);
+            console.log("VideoCreator: SSE job update", { jobId, jobData });
 
-        console.log("VideoCreator: Raw API response", {
-          jobId,
-          responseStatus: response.status,
-          responseOk: response.ok,
-          jobData: jobData,
-          jobStatus: jobData.status,
-          jobProgress: jobData.progress,
-        });
+            setJob(jobData);
+            jobRef.current = jobData;
 
-        console.log("VideoCreator: Setting job state", {
-          jobId,
-          oldStatus: jobRef.current?.status,
-          newStatus: jobData.status,
-          oldProgress: jobRef.current?.progress,
-          newProgress: jobData.progress,
-        });
-
-        setJob(jobData);
-        jobRef.current = jobData;
-
-        if (jobData.status === "done" && jobData.result) {
-          console.log("VideoCreator: Video creation completed", {
-            videoKey: jobData.result.key,
-            jobData: jobData,
-          });
-          const videoUrl = `/api/files/${encodeURIComponent(
-            jobData.result.key
-          )}`;
-          console.log("VideoCreator: Setting video URL", { videoUrl });
-          setVideoUrl(videoUrl);
-          onVideoCreate?.(jobData.result.key);
-          // 動画作成完了後に動画一覧を更新
-          if (projectId) {
-            console.log("VideoCreator: Updating video list after completion");
-            fetchVideoList();
+            if (jobData.status === "done" || jobData.status === "failed") {
+              console.log("VideoCreator: Job completed, closing SSE", {
+                jobId,
+                status: jobData.status,
+              });
+              eventSource?.close();
+            }
+          } catch (error) {
+            console.error("VideoCreator: Failed to parse SSE data", error, {
+              rawData: event.data,
+            });
           }
-          // ポーリングを停止
-          console.log("VideoCreator: Stopping polling after completion");
-          stopPolling();
-        } else if (jobData.status === "failed") {
-          console.error("VideoCreator: Video creation failed", {
-            error: jobData.error,
-            jobData: jobData,
+        };
+
+        eventSource.onerror = (error) => {
+          console.error("VideoCreator: SSE error", error, {
+            jobId,
+            readyState: eventSource?.readyState,
           });
-          setError(jobData.error || "動画作成に失敗しました");
-          // ポーリングを停止
-          console.log("VideoCreator: Stopping polling after failure");
-          stopPolling();
-        } else {
-          console.log("VideoCreator: Job still in progress", {
-            status: jobData.status,
-            progress: jobData.progress,
-            jobId: jobId,
-          });
-        }
+          eventSource?.close();
+
+          // SSEエラー時はエラーメッセージを表示
+          setError(
+            "リアルタイム接続に失敗しました。ページを更新してください。"
+          );
+        };
+
+        // SSE接続のタイムアウト処理（10秒でタイムアウト）
+        sseTimeout = setTimeout(() => {
+          console.log("VideoCreator: SSE connection timeout", { jobId });
+          eventSource?.close();
+          setError("接続がタイムアウトしました。ページを更新してください。");
+        }, 10000);
       } catch (error) {
-        console.error("VideoCreator: Error polling job status:", error);
+        console.error("VideoCreator: Failed to create SSE connection", error, {
+          jobId,
+        });
         setError(
-          `ジョブ状態の取得に失敗しました: ${
-            error instanceof Error ? error.message : String(error)
-          }`
+          "リアルタイム接続の作成に失敗しました。ページを更新してください。"
         );
       }
     };
 
-    const stopPolling = () => {
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-        pollingIntervalRef.current = null;
-        console.log("VideoCreator: Polling stopped", {
-          jobId,
-          currentJobId: jobRef.current?.id,
-        });
-      } else {
-        console.log("VideoCreator: No polling to stop", {
-          jobId,
-          currentJobId: jobRef.current?.id,
-        });
-      }
-    };
-
-    // 初回の状態取得
-    pollJobStatus();
-
-    // 1秒間隔でポーリング
-    pollingIntervalRef.current = setInterval(pollJobStatus, 1000);
+    // SSE接続を開始
+    startSSE();
 
     return () => {
-      console.log("VideoCreator: Cleaning up polling", { jobId });
-      stopPolling();
+      if (eventSource) {
+        eventSource.close();
+      }
+      if (sseTimeout) {
+        clearTimeout(sseTimeout);
+      }
     };
-  }, [jobId, onVideoCreate, projectId, fetchVideoList]);
+  }, [jobId]);
+
+  // ジョブ完了時の処理
+  useEffect(() => {
+    if (!job) return;
+
+    if (job.status === "done" && job.result) {
+      console.log("VideoCreator: Video creation completed", {
+        videoKey: job.result.key,
+        jobData: job,
+      });
+      const videoUrl = `/api/files/${encodeURIComponent(job.result.key)}`;
+      console.log("VideoCreator: Setting video URL", { videoUrl });
+      setVideoUrl(videoUrl);
+      onVideoCreate?.(job.result.key);
+
+      // 動画作成完了後に動画一覧を更新
+      if (projectId) {
+        console.log("VideoCreator: Updating video list after completion");
+        fetchVideoList();
+      }
+    } else if (job.status === "failed") {
+      console.error("VideoCreator: Video creation failed", {
+        error: job.error,
+        jobData: job,
+      });
+      setError(job.error || "動画作成に失敗しました");
+    }
+  }, [job, onVideoCreate, projectId, fetchVideoList]);
 
   return (
     <section

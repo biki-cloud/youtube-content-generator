@@ -111,10 +111,10 @@ export async function POST(req: NextRequest) {
         await runFFmpegWithProgress(args, {
           onProgress: (progress) => {
             updateJob(job.id, { progress });
-            logInfo("FFmpeg progress update", { jobId: job.id, progress });
+            // logInfo("FFmpeg progress update", { jobId: job.id, progress });
           },
           onStderr: (data) => {
-            logInfo("FFmpeg stderr", { jobId: job.id, stderr: data });
+            // logInfo("FFmpeg stderr", { jobId: job.id, stderr: data });
           },
           showProgressInTerminal: true, // ターミナルに進行状況を表示
           targetDuration: body.durationSec, // 指定された動画の長さを渡す
