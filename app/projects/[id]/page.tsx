@@ -322,19 +322,34 @@ export default function ProjectDetailPage() {
   const getProgressPercentage = () => {
     // 新しい構造での進捗計算
     if (project.data.youtube?.status === "done") {
+      console.log("YouTube status is done, returning 100%");
       return 100;
     }
 
-    // 各ステップの完了状況をチェック
+    // 各ステップの完了状況をチェック（YouTubeステップも含む）
     const steps = [
       project.data.prompts ? "prompts" : null,
       project.data.thumbnail?.status === "done" ? "thumbnail" : null,
       project.data.music?.status === "done" ? "music" : null,
       project.data.video?.status === "done" ? "video" : null,
+      project.data.youtube?.status === "done" ? "youtube" : null,
     ];
 
     const completedSteps = steps.filter(Boolean).length;
-    return Math.round((completedSteps / 4) * 100);
+    const percentage = Math.round((completedSteps / 5) * 100);
+
+    console.log("Progress calculation:", {
+      youtubeStatus: project.data.youtube?.status,
+      prompts: !!project.data.prompts,
+      thumbnailStatus: project.data.thumbnail?.status,
+      musicStatus: project.data.music?.status,
+      videoStatus: project.data.video?.status,
+      steps,
+      completedSteps,
+      percentage,
+    });
+
+    return percentage;
   };
 
   // YouTubeアップロード完了状態を判定

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { saveProjectData } from "@/lib/projects";
-import { GeneratedPrompts } from "@/lib/projects";
 
 export const runtime = "nodejs";
 
@@ -21,12 +20,14 @@ export async function PUT(
       );
     }
 
-    const prompts: GeneratedPrompts = {
+    const prompts = {
       theme,
-      music,
-      thumbnail,
-      youtubeTitle,
-      youtubeDescription,
+      created_prompts: {
+        music,
+        thumbnail,
+        youtubeTitle,
+        youtubeDescription,
+      },
       generatedAt: Date.now(),
     };
 
