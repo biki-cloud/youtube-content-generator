@@ -25,7 +25,6 @@ export async function PUT(
       theme,
       music,
       thumbnail,
-      video: "", // 空文字列で初期化
       youtubeTitle,
       youtubeDescription,
       generatedAt: Date.now(),

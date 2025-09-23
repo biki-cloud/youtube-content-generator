@@ -11,7 +11,6 @@ export interface GeneratedPrompts {
   theme: string;
   music: string;
   thumbnail: string;
-  video: string;
   youtubeTitle?: string;
   youtubeDescription?: string;
   generatedAt: number;
