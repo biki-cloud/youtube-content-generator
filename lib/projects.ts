@@ -23,17 +23,35 @@ export interface Project {
   createdAt: number;
   updatedAt: number;
   data: {
-    imageKey?: string;
-    thumbnailImageKey?: string;
-    musicKey?: string;
-    videoKey?: string;
-    youtubeVideoId?: string;
-    youtubeUrl?: string;
-    title?: string;
-    description?: string;
-    tags?: string[];
-    privacyStatus?: "public" | "private" | "unlisted";
-    prompts?: GeneratedPrompts;
+    prompts?: {
+      theme: string;
+      created_prompts: {
+        music: string;
+        thumbnail: string;
+        youtubeTitle: string;
+        youtubeDescription: string;
+      };
+      generatedAt: number;
+    };
+    thumbnail?: {
+      status: "todo" | "running" | "done";
+      created_thumbnail_filepath?: string;
+    };
+    music?: {
+      status: "todo" | "running" | "done";
+      created_music_filepath?: string;
+      deleted?: boolean;
+    };
+    video?: {
+      status: "todo" | "running" | "done";
+      created_video_filepath?: string;
+      video_url?: string;
+      deleted?: boolean;
+    };
+    youtube?: {
+      status: "todo" | "running" | "done";
+      youtube_upload_url?: string;
+    };
   };
 }
 
@@ -95,7 +113,20 @@ export function createProject(name: string, description?: string): Project {
     description,
     createdAt: now,
     updatedAt: now,
-    data: {},
+    data: {
+      thumbnail: {
+        status: "todo",
+      },
+      music: {
+        status: "todo",
+      },
+      video: {
+        status: "todo",
+      },
+      youtube: {
+        status: "todo",
+      },
+    },
   };
 
   data.projects.push(project);

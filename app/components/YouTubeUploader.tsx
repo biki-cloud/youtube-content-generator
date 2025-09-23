@@ -8,6 +8,7 @@ interface YouTubeUploaderProps {
   youtubeUrl?: string;
   youtubeTitle?: string;
   youtubeDescription?: string;
+  projectId?: string;
 }
 
 export default function YouTubeUploader({
@@ -16,6 +17,7 @@ export default function YouTubeUploader({
   youtubeUrl,
   youtubeTitle: propYoutubeTitle,
   youtubeDescription: propYoutubeDescription,
+  projectId,
 }: YouTubeUploaderProps) {
   const [videoKey, setVideoKey] = useState("");
   const [title, setTitle] = useState("");
@@ -81,7 +83,13 @@ export default function YouTubeUploader({
       const res = await fetch("/api/youtube/upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ videoKey, title, description, privacy }),
+        body: JSON.stringify({
+          videoKey,
+          title,
+          description,
+          privacy,
+          projectId,
+        }),
       });
 
       let json;

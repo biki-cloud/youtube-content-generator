@@ -11,18 +11,35 @@ interface Project {
   createdAt: number;
   updatedAt: number;
   data: {
-    imageKey?: string;
-    thumbnailImageKey?: string;
-    musicKey?: string;
-    videoKey?: string;
-    youtubeVideoId?: string;
-    youtubeUrl?: string;
-    youtubeUploadUrl?: string;
-    title?: string;
-    description?: string;
-    tags?: string[];
-    privacyStatus?: "public" | "private" | "unlisted";
-    prompts?: any;
+    prompts?: {
+      theme: string;
+      created_prompts: {
+        music: string;
+        thumbnail: string;
+        youtubeTitle: string;
+        youtubeDescription: string;
+      };
+      generatedAt: number;
+    };
+    thumbnail?: {
+      status: "todo" | "running" | "done";
+      created_thumbnail_filepath?: string;
+    };
+    music?: {
+      status: "todo" | "running" | "done";
+      created_music_filepath?: string;
+      deleted?: boolean;
+    };
+    video?: {
+      status: "todo" | "running" | "done";
+      created_video_filepath?: string;
+      video_url?: string;
+      deleted?: boolean;
+    };
+    youtube?: {
+      status: "todo" | "running" | "done";
+      youtube_upload_url?: string;
+    };
   };
 }
 
@@ -89,15 +106,21 @@ export default function ProjectList({ onCreateProject }: ProjectListProps) {
   };
 
   const getProgressPercentage = (project: Project) => {
-    const assets = [
-      project.data.prompts, // プロンプト生成
-      project.data.thumbnailImageKey,
-      project.data.musicKey,
-      project.data.videoKey,
-      project.data.youtubeVideoId || project.data.youtubeUploadUrl,
+    // 新しい構造での進捗計算
+    if (project.data.youtube?.status === "done") {
+      return 100;
+    }
+
+    // 各ステップの完了状況をチェック
+    const steps = [
+      project.data.prompts ? "prompts" : null,
+      project.data.thumbnail?.status === "done" ? "thumbnail" : null,
+      project.data.music?.status === "done" ? "music" : null,
+      project.data.video?.status === "done" ? "video" : null,
     ];
-    const completedAssets = assets.filter(Boolean).length;
-    return Math.round((completedAssets / assets.length) * 100);
+
+    const completedSteps = steps.filter(Boolean).length;
+    return Math.round((completedSteps / 4) * 100);
   };
 
   const getStatusColor = (percentage: number) => {
@@ -359,23 +382,42 @@ export default function ProjectList({ onCreateProject }: ProjectListProps) {
                         key: "prompts",
                         label: "プロンプト",
                         icon: "💭",
+                        isCompleted: !!project.data.prompts,
                       },
                       {
-                        key: "thumbnailImageKey",
+                        key: "thumbnail",
                         label: "サムネイル",
                         icon: "🖼️",
+                        isCompleted: project.data.thumbnail?.status === "done",
                       },
-                      { key: "musicKey", label: "音楽", icon: "🎵" },
-                      { key: "videoKey", label: "動画", icon: "🎬" },
-                      { key: "youtube", label: "YouTube", icon: "📺" },
-                    ].map(({ key, label, icon }) => {
-                      const isCompleted =
-                        key === "youtube"
-                          ? !!(
-                              project.data.youtubeVideoId ||
-                              project.data.youtubeUploadUrl
-                            )
-                          : !!project.data[key as keyof typeof project.data];
+                      {
+                        key: "music",
+                        label: "音楽",
+                        icon: "🎵",
+                        isCompleted: project.data.music?.status === "done",
+                        isDeleted: project.data.music?.deleted,
+                      },
+                      {
+                        key: "video",
+                        label: "動画",
+                        icon: "🎬",
+                        isCompleted: project.data.video?.status === "done",
+                        isDeleted: project.data.video?.deleted,
+                      },
+                      {
+                        key: "youtube",
+                        label: "YouTube",
+                        icon: "📺",
+                        isCompleted: project.data.youtube?.status === "done",
+                      },
+                    ].map(({ key, label, icon, isCompleted, isDeleted }) => {
+                      let statusIcon = "⭕";
+                      let statusColor = "#6c757d";
+
+                      if (isCompleted) {
+                        statusIcon = "✅";
+                        statusColor = "#28a745";
+                      }
 
                       return (
                         <div
@@ -385,12 +427,12 @@ export default function ProjectList({ onCreateProject }: ProjectListProps) {
                             alignItems: "center",
                             gap: 6,
                             fontSize: "12px",
-                            color: isCompleted ? "#28a745" : "#6c757d",
+                            color: statusColor,
                           }}
                         >
                           <span>{icon}</span>
                           <span>{label}</span>
-                          <span>{isCompleted ? "✅" : "⭕"}</span>
+                          <span>{statusIcon}</span>
                         </div>
                       );
                     })}

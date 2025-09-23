@@ -54,8 +54,8 @@ export async function GET(request: NextRequest) {
 
     // プロジェクトの動画キーを取得（複数対応）
     const projectVideoKeys: string[] = [];
-    if (project.data?.videoKey) {
-      projectVideoKeys.push(project.data.videoKey);
+    if (project.data?.video?.created_video_filepath) {
+      projectVideoKeys.push(project.data.video.created_video_filepath);
     }
 
     // プロジェクトに関連する動画ファイルをフィルタリング

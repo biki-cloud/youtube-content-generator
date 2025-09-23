@@ -19,25 +19,34 @@ interface Project {
   createdAt: number;
   updatedAt: number;
   data: {
-    imageKey?: string;
-    thumbnailImageKey?: string;
-    musicKey?: string;
-    videoKey?: string;
-    youtubeVideoId?: string;
-    youtubeUrl?: string;
-    youtubeUploadUrl?: string;
-    title?: string;
-    description?: string;
-    tags?: string[];
-    privacyStatus?: "public" | "private" | "unlisted";
     prompts?: {
       theme: string;
-      music: string;
-      thumbnail: string;
-      video: string;
-      youtubeTitle?: string;
-      youtubeDescription?: string;
+      created_prompts: {
+        music: string;
+        thumbnail: string;
+        youtubeTitle: string;
+        youtubeDescription: string;
+      };
       generatedAt: number;
+    };
+    thumbnail?: {
+      status: "todo" | "running" | "done";
+      created_thumbnail_filepath?: string;
+    };
+    music?: {
+      status: "todo" | "running" | "done";
+      created_music_filepath?: string;
+      deleted?: boolean;
+    };
+    video?: {
+      status: "todo" | "running" | "done";
+      created_video_filepath?: string;
+      video_url?: string;
+      deleted?: boolean;
+    };
+    youtube?: {
+      status: "todo" | "running" | "done";
+      youtube_upload_url?: string;
     };
   };
 }
@@ -50,10 +59,18 @@ export default function ProjectDetailPage() {
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [thumbnailImageKey, setThumbnailImageKey] = useState<string>("");
-  const [musicKey, setMusicKey] = useState<string>("");
-  const [videoKey, setVideoKey] = useState<string>("");
-  const [youtubeUploadUrl, setYoutubeUploadUrl] = useState<string>("");
+  // 新しい構造のみを使用した状態管理
+  const getThumbnailKey = () => {
+    return project?.data.thumbnail?.created_thumbnail_filepath || "";
+  };
+
+  const getMusicKey = () => {
+    return project?.data.music?.created_music_filepath || "";
+  };
+
+  const getVideoKey = () => {
+    return project?.data.video?.created_video_filepath || "";
+  };
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
@@ -122,11 +139,24 @@ export default function ProjectDetailPage() {
   const determineCurrentStep = useCallback(() => {
     if (!project) return "prompts";
     if (!project.data.prompts) return "prompts";
-    if (!project.data.thumbnailImageKey) return "thumbnail";
-    if (!project.data.musicKey) return "music";
-    if (!project.data.videoKey) return "video";
-    if (!project.data.youtubeVideoId && !project.data.youtubeUploadUrl)
+
+    // 新しい構造でのチェック
+    if (project.data.thumbnail?.status !== "done") return "thumbnail";
+
+    // YouTubeアップロードが完了している場合は、音楽と動画も完了として扱う
+    if (project.data.youtube?.status === "done") {
+      return "completed";
+    }
+
+    if (project.data.music?.status !== "done") return "music";
+    if (project.data.video?.status !== "done") return "video";
+    if (
+      !project.data.youtube ||
+      project.data.youtube.status === "todo" ||
+      project.data.youtube.status === "running"
+    )
       return "youtube";
+
     return "completed"; // 全て完了
   }, [project]);
 
@@ -147,10 +177,8 @@ export default function ProjectDetailPage() {
       const json = await res.json();
       if (res.ok) {
         setProject(json.project);
-        setThumbnailImageKey(json.project.data.thumbnailImageKey || "");
-        setMusicKey(json.project.data.musicKey || "");
-        setVideoKey(json.project.data.videoKey || "");
-        setYoutubeUploadUrl(json.project.data.youtubeUploadUrl || "");
+        // 新しい構造に対応したデータ読み込み
+        // 状態変数は削除したので、直接プロジェクトデータから取得
         setEditName(json.project.name);
         setEditDescription(json.project.description || "");
       } else {
@@ -292,15 +320,26 @@ export default function ProjectDetailPage() {
   }
 
   const getProgressPercentage = () => {
-    const assets = [
-      project.data.prompts, // プロンプト生成
-      project.data.thumbnailImageKey,
-      project.data.musicKey,
-      project.data.videoKey,
-      project.data.youtubeVideoId || project.data.youtubeUploadUrl,
+    // 新しい構造での進捗計算
+    if (project.data.youtube?.status === "done") {
+      return 100;
+    }
+
+    // 各ステップの完了状況をチェック
+    const steps = [
+      project.data.prompts ? "prompts" : null,
+      project.data.thumbnail?.status === "done" ? "thumbnail" : null,
+      project.data.music?.status === "done" ? "music" : null,
+      project.data.video?.status === "done" ? "video" : null,
     ];
-    const completedAssets = assets.filter(Boolean).length;
-    return Math.round((completedAssets / assets.length) * 100);
+
+    const completedSteps = steps.filter(Boolean).length;
+    return Math.round((completedSteps / 4) * 100);
+  };
+
+  // YouTubeアップロード完了状態を判定
+  const isYouTubeUploadComplete = () => {
+    return project.data.youtube?.status === "done";
   };
 
   const progress = getProgressPercentage();
@@ -600,63 +639,174 @@ export default function ProjectDetailPage() {
         <SavedPrompts projectId={projectId} onLoadPrompts={handleLoadPrompts} />
         <div id="thumbnail-creator">
           <ThumbnailCreator
-            imageKey={thumbnailImageKey}
+            imageKey={getThumbnailKey()}
             projectId={projectId}
-            thumbnailPrompt={project.data.prompts?.thumbnail}
+            thumbnailPrompt={project.data.prompts?.created_prompts?.thumbnail}
             onThumbnailCreate={(key) => {
-              setThumbnailImageKey(key);
-              saveProjectData({ thumbnailImageKey: key });
+              saveProjectData({
+                thumbnail: {
+                  status: "done",
+                  created_thumbnail_filepath: key,
+                },
+              });
             }}
             onImageUpload={async (key) => {
               console.log("Project: Image uploaded in ThumbnailCreator", {
                 key,
               });
-              setThumbnailImageKey(key);
               // サムネイル生成後にプロジェクトデータを保存するため、ここでは保存しない
             }}
           />
         </div>
         <div id="music-generator">
-          <MusicGenerator
-            musicKey={musicKey}
-            onMusicUpload={async (key) => {
-              console.log("Project: Music uploaded", { key });
-              setMusicKey(key);
-              await saveProjectData({ musicKey: key });
-            }}
-          />
+          {isYouTubeUploadComplete() ? (
+            <div
+              style={{
+                backgroundColor: "white",
+                border: "1px solid #dee2e6",
+                borderRadius: "12px",
+                padding: "20px",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "16px",
+                }}
+              >
+                <h3
+                  style={{
+                    margin: 0,
+                    fontSize: "18px",
+                    fontWeight: "bold",
+                    color: "#333",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                  }}
+                >
+                  🎵 音楽生成
+                </h3>
+                <div
+                  style={{
+                    backgroundColor: "#28a745",
+                    color: "white",
+                    padding: "4px 12px",
+                    borderRadius: "20px",
+                    fontSize: "12px",
+                    fontWeight: "bold",
+                  }}
+                >
+                  ✅ 完了済み
+                </div>
+              </div>
+              <div style={{ color: "#666", fontSize: "14px" }}>
+                YouTubeアップロード完了後、音楽ファイルは自動的に削除されました。
+              </div>
+            </div>
+          ) : (
+            <MusicGenerator
+              musicKey={getMusicKey()}
+              onMusicUpload={async (key) => {
+                console.log("Project: Music uploaded", { key });
+                await saveProjectData({
+                  music: {
+                    status: "done",
+                    created_music_filepath: key,
+                  },
+                });
+              }}
+            />
+          )}
         </div>
         <div id="video-creator">
-          <VideoCreator
-            imageKey={thumbnailImageKey}
-            musicKey={musicKey}
-            projectId={projectId}
-            onVideoCreate={async (videoKey) => {
-              console.log("Project: Video created successfully", { videoKey });
-              setVideoKey(videoKey);
-              await saveProjectData({ videoKey });
-            }}
-          />
+          {isYouTubeUploadComplete() ? (
+            <div
+              style={{
+                backgroundColor: "white",
+                border: "1px solid #dee2e6",
+                borderRadius: "12px",
+                padding: "20px",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "16px",
+                }}
+              >
+                <h3
+                  style={{
+                    margin: 0,
+                    fontSize: "18px",
+                    fontWeight: "bold",
+                    color: "#333",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                  }}
+                >
+                  🎬 動画作成
+                </h3>
+                <div
+                  style={{
+                    backgroundColor: "#28a745",
+                    color: "white",
+                    padding: "4px 12px",
+                    borderRadius: "20px",
+                    fontSize: "12px",
+                    fontWeight: "bold",
+                  }}
+                >
+                  ✅ 完了済み
+                </div>
+              </div>
+              <div style={{ color: "#666", fontSize: "14px" }}>
+                YouTubeアップロード完了後、動画ファイルは自動的に削除されました。
+              </div>
+            </div>
+          ) : (
+            <VideoCreator
+              imageKey={getThumbnailKey()}
+              musicKey={getMusicKey()}
+              projectId={projectId}
+              onVideoCreate={async (videoKey) => {
+                console.log("Project: Video created successfully", {
+                  videoKey,
+                });
+                await saveProjectData({
+                  video: {
+                    status: "done",
+                    created_video_filepath: videoKey,
+                  },
+                });
+              }}
+            />
+          )}
         </div>
         <div id="youtube-uploader">
           <YouTubeUploader
-            videoKey={videoKey}
-            youtubeUrl={youtubeUploadUrl}
-            youtubeTitle={project.data.prompts?.youtubeTitle}
-            youtubeDescription={project.data.prompts?.youtubeDescription}
+            videoKey={getVideoKey()}
+            youtubeUrl={project.data.youtube?.youtube_upload_url || ""}
+            youtubeTitle={project.data.prompts?.created_prompts?.youtubeTitle}
+            youtubeDescription={
+              project.data.prompts?.created_prompts?.youtubeDescription
+            }
+            projectId={project.id}
             onUploadSuccess={async (url) => {
               console.log("Project: YouTube upload successful", { url });
-              setYoutubeUploadUrl(url);
-              // URLからvideoIdを抽出
-              const videoId = url.includes("watch?v=")
-                ? url.split("watch?v=")[1]?.split("&")[0]
-                : url.includes("youtu.be/")
-                ? url.split("youtu.be/")[1]?.split("?")[0]
-                : null;
 
               await saveProjectData({
-                youtubeUploadUrl: url,
-                youtubeVideoId: videoId,
+                youtube: {
+                  status: "done",
+                  youtube_upload_url: url,
+                },
               });
             }}
           />

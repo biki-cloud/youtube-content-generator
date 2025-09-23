@@ -39,3 +39,35 @@ export function urlFor(key: StorageKey) {
   // For now, return file:// style info-less URL placeholder.
   return `/api/files/${encodeURIComponent(key)}`;
 }
+
+export async function deleteFile(key: StorageKey): Promise<boolean> {
+  try {
+    const full = resolveKey(key);
+    if (fs.existsSync(full)) {
+      await fs.promises.unlink(full);
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error(`Failed to delete file ${key}:`, error);
+    return false;
+  }
+}
+
+export async function deleteFiles(
+  keys: StorageKey[]
+): Promise<{ deleted: string[]; failed: string[] }> {
+  const deleted: string[] = [];
+  const failed: string[] = [];
+
+  for (const key of keys) {
+    const success = await deleteFile(key);
+    if (success) {
+      deleted.push(key);
+    } else {
+      failed.push(key);
+    }
+  }
+
+  return { deleted, failed };
+}

@@ -4,6 +4,8 @@ import path from "node:path";
 import { google } from "googleapis";
 import { getEnv } from "@/env/schema";
 import { readToken } from "@/lib/youtube";
+import { deleteFiles } from "@/lib/storage";
+import { getProject, saveProjectData } from "@/lib/projects";
 
 export const runtime = "nodejs";
 
@@ -13,6 +15,7 @@ type Body = {
   description?: string;
   tags?: string[];
   privacy?: "public" | "unlisted" | "private";
+  projectId?: string;
 };
 
 export async function POST(req: NextRequest) {
@@ -63,8 +66,99 @@ export async function POST(req: NextRequest) {
   });
 
   const videoId = res.data.id;
+  const youtubeUrl = videoId
+    ? `https://www.youtube.com/watch?v=${videoId}`
+    : undefined;
+
+  // YouTubeアップロード成功後、関連ファイルを削除
+  if (youtubeUrl && body.projectId) {
+    try {
+      const project = getProject(body.projectId);
+      if (project) {
+        const filesToDelete: string[] = [];
+
+        // 新しい構造のファイルパスを削除対象に追加
+        if (project.data.video?.created_video_filepath) {
+          filesToDelete.push(project.data.video.created_video_filepath);
+        }
+        if (project.data.music?.created_music_filepath) {
+          filesToDelete.push(project.data.music.created_music_filepath);
+        }
+
+        // ファイル削除を実行
+        if (filesToDelete.length > 0) {
+          const deleteResult = await deleteFiles(filesToDelete);
+          console.log("Files deleted after YouTube upload:", {
+            projectId: body.projectId,
+            deleted: deleteResult.deleted,
+            failed: deleteResult.failed,
+          });
+
+          // プロジェクトデータから削除されたファイルの情報をクリア
+          const updateData: any = {};
+
+          // 新しい構造での更新
+          if (
+            deleteResult.deleted.includes(
+              project.data.video?.created_video_filepath || ""
+            )
+          ) {
+            updateData.video = {
+              ...project.data.video,
+              deleted: true,
+            };
+          }
+          if (
+            deleteResult.deleted.includes(
+              project.data.music?.created_music_filepath || ""
+            )
+          ) {
+            updateData.music = {
+              ...project.data.music,
+              deleted: true,
+            };
+          }
+
+          // YouTubeアップロード完了状態を更新
+          updateData.youtube = {
+            status: "done",
+            youtube_upload_url: youtubeUrl,
+          };
+
+          if (Object.keys(updateData).length > 0) {
+            console.log("Updating project data after file deletion:", {
+              projectId: body.projectId,
+              updateData,
+            });
+            const updatedProject = saveProjectData(body.projectId, updateData);
+            if (updatedProject) {
+              console.log("Project data updated successfully:", {
+                projectId: body.projectId,
+                updatedData: updatedProject.data,
+              });
+            } else {
+              console.error("Failed to update project data:", {
+                projectId: body.projectId,
+                updateData,
+              });
+            }
+          } else {
+            console.log("No project data updates needed:", {
+              projectId: body.projectId,
+              deletedFiles: deleteResult.deleted,
+              projectData: project.data,
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error deleting files after YouTube upload:", error);
+      // ファイル削除に失敗してもYouTubeアップロードは成功として扱う
+    }
+  }
+
   return Response.json({
     videoId,
-    url: videoId ? `https://www.youtube.com/watch?v=${videoId}` : undefined,
+    url: youtubeUrl,
   });
 }
