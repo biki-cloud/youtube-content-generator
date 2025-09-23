@@ -106,12 +106,6 @@ export default function ProjectList({ onCreateProject }: ProjectListProps) {
   };
 
   const getProgressPercentage = (project: Project) => {
-    // 新しい構造での進捗計算
-    if (project.data.youtube?.status === "done") {
-      console.log("ProjectList: YouTube status is done, returning 100%");
-      return 100;
-    }
-
     // 各ステップの完了状況をチェック（YouTubeステップも含む）
     const steps = [
       project.data.prompts ? "prompts" : null,
