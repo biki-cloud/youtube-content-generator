@@ -331,8 +331,8 @@ export default function ProjectDetailPage() {
       project.data.prompts ? "prompts" : null,
       project.data.thumbnail?.status === "done" ? "thumbnail" : null,
       project.data.music?.status === "done" ? "music" : null,
-      project.data.video?.status === "done" ? "video" : null,
-      project.data.youtube?.status === "done" ? "youtube" : null,
+      (project.data.video?.status as string) === "done" ? "video" : null,
+      (project.data.youtube?.status as string) === "done" ? "youtube" : null,
     ];
 
     const completedSteps = steps.filter(Boolean).length;
