@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
         defaultLanguage: "ja",
       },
       status: {
-        privacyStatus: body.privacy || "unlisted",
+        privacyStatus: body.privacy || "public",
       },
     },
     media: { body: fs.createReadStream(filePath) },

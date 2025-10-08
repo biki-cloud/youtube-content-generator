@@ -23,7 +23,7 @@ export default function YouTubeUploader({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [privacy, setPrivacy] = useState<"public" | "unlisted" | "private">(
-    "unlisted"
+    "public"
   );
   const [status, setStatus] = useState<string>("");
   const [isUploading, setIsUploading] = useState(false);
