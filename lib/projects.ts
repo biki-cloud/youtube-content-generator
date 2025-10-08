@@ -14,6 +14,12 @@ export interface GeneratedPrompts {
   youtubeTitle?: string;
   youtubeDescription?: string;
   generatedAt: number;
+  created_prompts?: {
+    music: string;
+    thumbnail: string;
+    youtubeTitle: string;
+    youtubeDescription: string;
+  };
 }
 
 export interface Project {

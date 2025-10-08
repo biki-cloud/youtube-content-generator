@@ -154,7 +154,9 @@ export default function SavedPrompts({
                     🎵 音楽プロンプト
                   </h4>
                   <p style={{ margin: 0, fontSize: 14, lineHeight: 1.4 }}>
-                    {prompts.music}
+                    {prompts.music ||
+                      prompts.created_prompts?.music ||
+                      "音楽プロンプトがありません"}
                   </p>
                 </div>
 
@@ -176,11 +178,14 @@ export default function SavedPrompts({
                     🖼️ サムネイルプロンプト
                   </h4>
                   <p style={{ margin: 0, fontSize: 14, lineHeight: 1.4 }}>
-                    {prompts.thumbnail}
+                    {prompts.thumbnail ||
+                      prompts.created_prompts?.thumbnail ||
+                      "サムネイルプロンプトがありません"}
                   </p>
                 </div>
 
-                {prompts.youtubeTitle && (
+                {(prompts.youtubeTitle ||
+                  prompts.created_prompts?.youtubeTitle) && (
                   <div
                     style={{
                       padding: 12,
@@ -199,12 +204,14 @@ export default function SavedPrompts({
                       📺 YouTube タイトル
                     </h4>
                     <p style={{ margin: 0, fontSize: 14, lineHeight: 1.4 }}>
-                      {prompts.youtubeTitle}
+                      {prompts.youtubeTitle ||
+                        prompts.created_prompts?.youtubeTitle}
                     </p>
                   </div>
                 )}
 
-                {prompts.youtubeDescription && (
+                {(prompts.youtubeDescription ||
+                  prompts.created_prompts?.youtubeDescription) && (
                   <div
                     style={{
                       padding: 12,
@@ -223,36 +230,12 @@ export default function SavedPrompts({
                       📝 YouTube 説明文
                     </h4>
                     <p style={{ margin: 0, fontSize: 14, lineHeight: 1.4 }}>
-                      {prompts.youtubeDescription}
+                      {prompts.youtubeDescription ||
+                        prompts.created_prompts?.youtubeDescription}
                     </p>
                   </div>
                 )}
               </div>
-
-              {onLoadPrompts && (
-                <div
-                  style={{
-                    marginTop: 16,
-                    display: "flex",
-                    justifyContent: "center",
-                  }}
-                >
-                  <button
-                    onClick={() => onLoadPrompts(prompts)}
-                    style={{
-                      padding: "8px 16px",
-                      backgroundColor: "#007bff",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "4px",
-                      cursor: "pointer",
-                      fontSize: 14,
-                    }}
-                  >
-                    📋 プロンプトをコピー
-                  </button>
-                </div>
-              )}
             </>
           )}
         </div>
